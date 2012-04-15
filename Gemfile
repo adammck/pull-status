@@ -4,3 +4,4 @@
 source "http://rubygems.org"
 gem "sinatra", "~> 1.3.2"
 gem "octokit", "~> 0.7.6"
+gem "redis", "~> 2.2.2"

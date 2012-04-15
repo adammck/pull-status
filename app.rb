@@ -3,12 +3,45 @@
 
 require "sinatra"
 require "octokit"
+require "redis"
+
+
+# Init
+
+redis = Redis.new
+NS = "pullstate"
+TTL = 60 * 5
+
+
+# Routes
 
 get "/:user/:repo/pull/:number" do
-  repo = "#{params[:user]}/#{params[:repo]}"
-  pull = Octokit.pull repo, params[:number]
+  k = key params
+  fn = redis.get k
 
-  filename = if pull.merged_at
+  unless fn
+    fn = state params
+    redis.setex k, TTL, fn
+  end
+
+  send_file "images/#{fn}.png"
+end
+
+
+# Helpers
+
+def key p
+  "#{NS}:#{p[:user]}/#{p[:repo]}/#{p[:number]}"
+end
+
+def pull_request! p
+  repo = "#{p[:user]}/#{p[:repo]}"
+  Octokit.pull repo, p[:number]
+end
+
+def state p
+  pull = pull_request! p
+  if pull.merged_at
     "merged"
 
   elsif pull.closed_at
@@ -17,6 +50,4 @@ get "/:user/:repo/pull/:number" do
   else
     "open"
   end
-
-  send_file "images/#{filename}.png"
 end
