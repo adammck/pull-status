@@ -4,50 +4,78 @@
 require "sinatra"
 require "octokit"
 require "redis"
-
+require "json"
 
 # Init
 
-redis = Redis.new
-NS = "pullstate"
+$redis = Redis.new
+VERSION = %x{git show-ref --hash=7 --head HEAD}.strip
+NAMESPACE = "pullstatus:#{VERSION}"
 TTL = 60 * 5
+
 
 
 # Routes
 
-get "/:user/:repo/pull/:number" do
-  k = key params
-  fn = redis.get k
+get "/:user/:repo/pull/:num" do
+  pull_request = PullRequest.new params
+  send_file "images/#{pull_request.status}.png",
+    :last_modified=>pull_request.updated_at
+end
 
-  unless fn
-    fn = state params
-    redis.setex k, TTL, fn
+
+# Models
+
+class PullRequest
+  def initialize params
+    @user = params[:user]
+    @repo = params[:repo]
+    @num = params[:num]
   end
 
-  send_file "images/#{fn}.png"
-end
+  def status
+    if pull_request["merged_at"]
+      "merged"
 
+    elsif pull_request["closed_at"]
+      "rejected"
 
-# Helpers
+    else
+      "open"
+    end
+  end
 
-def key p
-  "#{NS}:#{p[:user]}/#{p[:repo]}/#{p[:number]}"
-end
+  def method_missing meth, *args, &block
+    pull_request[meth.to_s]
+  end
 
-def pull_request! p
-  repo = "#{p[:user]}/#{p[:repo]}"
-  Octokit.pull repo, p[:number]
-end
+  def pull_request
+    @pr ||= get!
+  end
 
-def state p
-  pull = pull_request! p
-  if pull.merged_at
-    "merged"
+  private
 
-  elsif pull.closed_at
-    "rejected"
+  def key
+    "#{NAMESPACE}:#{repo}/#{@num}"
+  end
 
-  else
-    "open"
+  def repo
+    "#{@user}/#{@repo}"
+  end
+
+  def get!
+    json = $redis.get(key)
+
+    if json.nil?
+      json = fetch!.to_json
+      $redis.setex key, TTL, json
+    end
+
+    JSON.parse(json)
+  end
+
+  def fetch!
+    puts "Fetching: #{key} PUTS"
+    Octokit.pull(repo, @num)
   end
 end
