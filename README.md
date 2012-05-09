@@ -1,7 +1,7 @@
 This is a tiny [Sinatra] [sinatra] app, to serve little badges showing the
 current status of a pull request on GitHub: open, merged, or rejected. They're
-based on the lovely [Travis CI] [travis] status images. I haven't actually
-deployed it yet, but I'm dumping the code in advance.
+based on the lovely [Travis CI] [travis] status images. The app is live at
+[https://pullstat.us] [site]. You're welcome to use it, or host your own.
 
 
 ### Why is this useful?
@@ -31,9 +31,9 @@ The path is exactly the same as the pull request on GitHub. Just change the doma
 
 
 
+[site]:    https://pullstat.us
 [repo]:    https://github.com/adammck/pull-status
 [license]: https://raw.github.com/adammck/pull-status/master/LICENSE
 [sinatra]: http://www.sinatrarb.com
 [travis]:  http://about.travis-ci.org
 [example]: https://github.com/adammck/grit
-⁣⁣⁣
