@@ -9,7 +9,7 @@ require "json"
 # Init
 
 $redis = Redis.new
-VERSION = %x{git show-ref --hash=7 --head HEAD}.strip
+VERSION = %x{git rev-parse --short HEAD}.strip
 NAMESPACE = "pullstatus:#{VERSION}"
 TTL = 60 * 5
 
